@@ -69,7 +69,7 @@ def _mensajes(pregunta, contexto, historial):
 
 
 def preguntar(pregunta, contexto="", api_key=None, historial=None,
-              modelo=None, max_tokens=5600, stream_callback=None):
+              modelo=None, max_tokens=9590, stream_callback=None):
     """
     Envía la pregunta a Groq y devuelve la respuesta como texto.
 
