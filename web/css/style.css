@@ -1,0 +1,74 @@
+/* ====== Variables de color: cambia aquí la paleta ====== */
+:root {
+  --fondo: #f3f5f9;
+  --panel: #ffffff;
+  --texto: #1c2430;
+  --primario: #d9480f;
+  --secundario: #1c7ed6;
+  --borde: #dde3ec;
+  --radio: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #12161c;
+    --panel: #1c222b;
+    --texto: #e6eaf0;
+    --borde: #2c3541;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+}
+header { padding: 1.2rem 2rem; background: var(--primario); color: #fff; }
+header h1 { margin: 0 0 .2rem; }
+header p { margin: 0; opacity: .9; }
+
+main {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  padding: 1rem 2rem 2rem;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 1rem 1.2rem;
+}
+.panel h2 { margin-top: 0; font-size: 1.05rem; }
+.controles { grid-row: span 2; }
+.grafico, .ia { grid-column: 1 / -1; }
+
+label { display: block; margin: .8rem 0 .2rem; font-weight: 600; }
+input[type=range] { width: 100%; }
+input[type=number], select, input[type=password], textarea {
+  width: 100%; padding: .45rem; border-radius: 8px;
+  border: 1px solid var(--borde); background: var(--panel); color: var(--texto);
+}
+
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; }
+.tarjeta { border: 1px solid var(--borde); border-radius: 10px; padding: .7rem; }
+.tarjeta span { display: block; font-size: .85rem; opacity: .75; }
+.tarjeta strong { font-size: 1.35rem; }
+.tarjeta.destacada { border-color: var(--secundario); }
+
+#mapa { height: 560px; }
+#superficie { height: 600px; }
+
+button {
+  margin-top: .6rem; padding: .6rem 1.2rem; border: 0; border-radius: 8px;
+  background: var(--secundario); color: #fff; font-weight: 600; cursor: pointer;
+}
+button:disabled { opacity: .6; cursor: wait; }
+pre { white-space: pre-wrap; margin-top: 1rem; }
+.aviso { font-size: .85rem; opacity: .8; }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; padding: 1rem; }
+  .controles { grid-row: auto; }
+}

@@ -1,0 +1,12 @@
+[server]
+# Escucha en todas las interfaces para poder abrir la app desde el celular (misma red WiFi)
+address = "0.0.0.0"
+port = 8501
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#2e7d32"

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contaminación atmosférica</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Librerías de gráficos (CDN). Plotly: mapa y 3D | Chart.js: perfil de C -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🌫️ Contaminación atmosférica</h1>
+    <p>C(x, y) = 0.02x² + 0.01y² + 0.03xy &nbsp;|&nbsp; x: emisiones · y: viento</p>
+  </header>
+
+  <main>
+    <section class="panel controles">
+      <h2>Entradas</h2>
+
+      <label>Emisiones (x): <output id="outX">20</output></label>
+      <input type="range" id="sliderX" min="0" max="50" step="0.5" value="20">
+      <input type="number" id="numX" min="0" max="50" step="0.5" value="20">
+
+      <label>Viento (y): <output id="outY">10</output></label>
+      <input type="range" id="sliderY" min="0" max="30" step="0.5" value="10">
+      <input type="number" id="numY" min="0" max="30" step="0.5" value="10">
+
+      <label for="direccion">Dirección</label>
+      <select id="direccion">
+        <option value="menosX">Reducir emisiones (-x)</option>
+        <option value="masX">Aumentar emisiones (+x)</option>
+        <option value="menosY">Reducir viento (-y)</option>
+        <option value="masY">Aumentar viento (+y)</option>
+        <option value="masGrad">Máximo aumento (+∇C)</option>
+        <option value="menosGrad">Descenso más rápido (-∇C)</option>
+        <option value="angulo">Ángulo personalizado</option>
+      </select>
+      <div id="bloqueAngulo" hidden>
+        <label>Ángulo: <output id="outAng">225</output>°</label>
+        <input type="range" id="angulo" min="0" max="360" value="225">
+      </div>
+    </section>
+
+    <section class="panel resultados">
+      <h2>Resultados</h2>
+      <div class="tarjetas">
+        <div class="tarjeta"><span>C(x, y)</span><strong id="resC">-</strong></div>
+        <div class="tarjeta"><span>∂C/∂x</span><strong id="resCx">-</strong></div>
+        <div class="tarjeta"><span>∂C/∂y</span><strong id="resCy">-</strong></div>
+        <div class="tarjeta"><span>|∇C|</span><strong id="resNorma">-</strong></div>
+        <div class="tarjeta"><span>Dirección û</span><strong id="resU">-</strong></div>
+        <div class="tarjeta destacada"><span>D<sub>u</sub>C</span><strong id="resDD">-</strong></div>
+      </div>
+      <p id="interpretacion"></p>
+    </section>
+
+    <section class="panel grafico">
+      <h2>Mapa de calor + curvas de nivel + gradiente</h2>
+      <div id="mapa"></div>
+    </section>
+
+    <section class="panel grafico">
+      <h2>Superficie 3D</h2>
+      <div id="superficie"></div>
+    </section>
+
+    <section class="panel grafico">
+      <h2>Perfil de C en la dirección elegida (Chart.js)</h2>
+      <canvas id="perfil" height="120"></canvas>
+    </section>
+
+    <section class="panel ia">
+      <h2>🤖 Asistente IA (Gemini)</h2>
+      <p class="aviso">⚠️ Para pruebas locales. Tu clave se guarda solo en esta pestaña.
+        En producción usa un servidor (Streamlit/Python) para no exponerla.</p>
+      <input type="password" id="apiKey" placeholder="Pega tu API key de Gemini">
+      <textarea id="pregunta" rows="3">Explica qué significan estos resultados para la contaminación.</textarea>
+      <button id="btnIA">Consultar IA</button>
+      <pre id="respuestaIA"></pre>
+    </section>
+  </main>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
