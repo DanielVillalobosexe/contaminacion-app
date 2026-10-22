@@ -108,33 +108,39 @@ with st.expander("📝 Configurar Ecuación Matemática", expanded=True):
         st.error(f"Error en la ecuación: {e}")
         st.stop()
 
-# ------------------------- ENTRADAS (barra lateral) -------------------------
+# ------------------------- ESCALA Y APARIENCIA (barra lateral) --------------
 with st.sidebar:
-    st.header("Parámetros")
+    st.header("Escala de los ejes")
     xmax = st.number_input("Máximo del eje x (emisiones)", 10, 500, 50, step=10)
     ymax = st.number_input("Máximo del eje y (viento)", 10, 200, 30, step=5)
-
-    modo = st.radio("Tipo de entrada", ["Deslizadores", "Campos numéricos"], horizontal=True)
-    if modo == "Deslizadores":
-        x = st.slider("Intensidad de emisiones (x)", 0.0, float(xmax), 20.0, 0.5)
-        y = st.slider("Velocidad del viento (y)", 0.0, float(ymax), 10.0, 0.5)
-    else:
-        x = st.number_input("Intensidad de emisiones (x)", 0.0, float(xmax), 20.0, 0.5)
-        y = st.number_input("Velocidad del viento (y)", 0.0, float(ymax), 10.0, 0.5)
-
-    st.header("Dirección")
-    opciones = m.direcciones_predefinidas(x, y, f_gx, f_gy)
-    opciones["Ángulo personalizado"] = None
-    nombre_dir = st.selectbox("Mover hacia…", list(opciones.keys()), index=0)
-    if opciones[nombre_dir] is None:
-        ang = st.slider("Ángulo (0° = +x, 90° = +y)", 0, 360, 225)
-        ux, uy = m.angulo_a_vector(ang)
-    else:
-        ux, uy = m.unitario(*opciones[nombre_dir])
 
     st.header("Apariencia")
     st.toggle("Fondo negro", key="fondo_negro",
               help="Cambia el fondo de la app entre blanco y negro.")
+
+# ------------ PUNTO DE ANÁLISIS Y DIRECCIÓN (panel principal) ---------------
+with st.container(border=True):
+    st.subheader("1️⃣ Punto de análisis")
+    cp1, cp2 = st.columns(2)
+    x = cp1.number_input("Emisiones (x)", 0.0, float(xmax), 20.0, 0.5,
+                         help="Intensidad de emisiones en el eje x.")
+    y = cp2.number_input("Viento (y)", 0.0, float(ymax), 10.0, 0.5,
+                         help="Velocidad del viento en el eje y.")
+
+    st.subheader("2️⃣ Dirección del vector")
+    cd1, cd2 = st.columns(2)
+    vx = cd1.number_input("Componente vx", value=1.0, step=0.25,
+                          help="Componente de la dirección sobre el eje x (emisiones).")
+    vy = cd2.number_input("Componente vy", value=1.0, step=0.25,
+                          help="Componente de la dirección sobre el eje y (viento).")
+
+    # El vector unitario se obtiene SIEMPRE con la misma fórmula fija: û = v/|v|.
+    try:
+        ux, uy = m.unitario(vx, vy)
+    except ValueError as e:
+        st.error(f"No se puede calcular el vector unitario: {e}")
+        st.stop()
+    st.caption(f"Vector unitario: û = v/|v| = ({ux:.4f}, {uy:.4f})")
 
 # ------------------------------- CÁLCULOS ----------------------------------
 c = m.concentracion(x, y, f_c)
@@ -149,25 +155,78 @@ if not all(map(lambda v: v == v and abs(v) != float("inf"), (c, gx, gy))):
 # ------------------------------- SALIDAS -----------------------------------
 col1, col2, col3 = st.columns(3)
 col1.metric("Concentración C(x, y)", f"{c:.4f}")
-col2.metric("∂C/∂x", f"{gx:.4f}")
-col3.metric("∂C/∂y", f"{gy:.4f}")
-
-col4, col5, col6 = st.columns(3)
-col4.metric("|∇C| (tasa máxima de cambio)", f"{mag:.4f}", help=f"Dirección del gradiente: {ang_grad:.1f}°")
-col5.metric("Dirección û", f"({ux:.3f}, {uy:.3f})")
-col6.metric("Derivada direccional D_u C", f"{dd:.4f}",
+col2.metric("|∇C| (tasa máxima de cambio)", f"{mag:.4f}",
+            help=f"Ángulo del gradiente: {ang_grad:.1f}°")
+col3.metric("Derivada direccional D_u C", f"{dd:.4f}",
             delta="aumenta" if dd > 0 else ("disminuye" if dd < 0 else "sin cambio"),
             delta_color="inverse")
 
-with st.expander("Ver el procedimiento paso a paso"):
-    st.latex(rf"C(x,y) = {sp.latex(expr)}")
-    st.latex(rf"C({x:g},{y:g})={c:.4f}")
+st.markdown("**Vector gradiente y vector unitario**")
+st.dataframe(pd.DataFrame([
+    {"Vector": "∇C (gradiente)",
+     "Componentes": f"({gx:.4f}, {gy:.4f})",
+     "Módulo": f"{mag:.4f}",
+     "Ángulo": f"{ang_grad:.1f}°"},
+    {"Vector": "û = v/|v| (unitario)",
+     "Componentes": f"({ux:.4f}, {uy:.4f})",
+     "Módulo": "1.0000",
+     "Ángulo": f"{m.angulo_gradiente(ux, uy):.1f}°"},
+]), hide_index=True)
+
+with st.expander("🧮 Ver el procedimiento paso a paso"):
+    st.markdown("**Paso 1 — Vector unitario (fórmula fija)**")
+    st.latex(r"\hat{u}=\frac{\vec{v}}{\|\vec{v}\|}=\frac{(v_x,\,v_y)}"
+             r"{\sqrt{v_x^{2}+v_y^{2}}}")
+    st.latex(rf"\hat{{u}}=\frac{{({vx:g},\,{vy:g})}}"
+             rf"{{\sqrt{{({vx:g})^{{2}}+({vy:g})^{{2}}}}}}=({ux:.4f},\,{uy:.4f})")
+
+    st.markdown("**Paso 2 — Función y gradiente**")
+    st.latex(rf"C(x,y)={sp.latex(expr)}")
     st.latex(rf"\nabla C=\left({sp.latex(diff_x)},\;{sp.latex(diff_y)}\right)")
-    st.latex(rf"\nabla C({x:g},{y:g})=({gx:.4f},\;{gy:.4f}),\qquad |\nabla C|={mag:.4f}")
-    st.latex(r"D_{\mathbf{u}}C=\nabla C\cdot\mathbf{u}")
-    st.latex(rf"D_{{\mathbf{{u}}}}C=({gx:.4f})({ux:.3f})+({gy:.4f})({uy:.3f})={dd:.4f}")
+    st.latex(rf"C({x:g},{y:g})={c:.4f}")
+    st.latex(rf"\nabla C({x:g},{y:g})=({gx:.4f},\;{gy:.4f}),\qquad "
+             rf"|\nabla C|={mag:.4f}\quad({ang_grad:.1f}^\circ)")
+
+    st.markdown("**Paso 3 — Derivada direccional**")
+    st.latex(r"D_{\hat{u}}C=\nabla C\cdot\hat{u}=C_x\,u_x+C_y\,u_y")
+    st.latex(rf"D_{{\hat{{u}}}}C=({gx:.4f})({ux:.4f})+({gy:.4f})({uy:.4f})={dd:.4f}")
+
     st.caption("Recuerda: D_u C es máxima (= |∇C|) en la dirección de ∇C, mínima (= −|∇C|) en −∇C "
                "y cero en la dirección perpendicular (a lo largo de la curva de nivel).")
+
+# --------------------- TABLA DE PUNTOS QUE SE AGREGAN ----------------------
+with st.expander("📌 Agregar puntos y compararlos", expanded=True):
+    st.caption("Agrega las filas que quieras: en cada punto se calculan el gradiente ∇C, "
+               "el vector unitario û y la derivada direccional D_u C con la dirección de arriba.")
+    puntos = st.data_editor(
+        pd.DataFrame({"x": [20.0, 5.0], "y": [10.0, 25.0]}),
+        num_rows="dynamic", key="puntos", width="stretch",
+        column_config={
+            "x": st.column_config.NumberColumn("Emisiones (x)", step=0.5, format="%.3f"),
+            "y": st.column_config.NumberColumn("Viento (y)", step=0.5, format="%.3f"),
+        },
+    )
+
+    filas = []
+    for _, fila in puntos.dropna().iterrows():
+        px, py = float(fila["x"]), float(fila["y"])
+        pgx, pgy = m.gradiente(px, py, f_gx, f_gy)
+        pdd = m.derivada_direccional(px, py, ux, uy, f_gx, f_gy)
+        filas.append({
+            "x": px, "y": py,
+            "C(x,y)": m.concentracion(px, py, f_c),
+            "∇C": f"({pgx:.4f}, {pgy:.4f})",
+            "|∇C|": m.magnitud_gradiente(pgx, pgy),
+            "û": f"({ux:.4f}, {uy:.4f})",
+            "D_u C": pdd,
+            "cambio": "aumenta" if pdd > 0 else ("disminuye" if pdd < 0 else "sin cambio"),
+        })
+
+    if filas:
+        st.dataframe(pd.DataFrame(filas), hide_index=True)
+    else:
+        st.info("Agrega al menos un punto (x, y) para ver sus resultados.")
+
 
 # ------------------------ ANÁLISIS DE SEGUNDO ORDEN -------------------------
 with st.expander("🔬 Análisis avanzado: Hessiana, puntos críticos y plano tangente"):
@@ -227,13 +286,27 @@ with tab2d:
     fig.add_trace(go.Scatter(x=[x], y=[y], mode="markers",
                              marker=dict(size=12, color="white", line=dict(color="black", width=2)),
                              name="Punto actual"))
+    if filas:
+        fig.add_trace(go.Scatter(
+            x=[f["x"] for f in filas], y=[f["y"] for f in filas],
+            mode="markers", name="Puntos añadidos",
+            marker=dict(size=10, color="deepskyblue", symbol="diamond",
+                        line=dict(color="black", width=1))))
+
+    # Dos flechas sobre el punto actual: la dirección û (verde) y el gradiente ∇C (azul).
     largo = 0.12
     fig.add_annotation(x=x + ux * largo * xmax, y=y + uy * largo * ymax, ax=x, ay=y,
                        xref="x", yref="y", axref="x", ayref="y",
                        showarrow=True, arrowhead=3, arrowwidth=3, arrowcolor="green")
+    if mag > 1e-12:
+        fig.add_annotation(x=x + gx / mag * largo * xmax, y=y + gy / mag * largo * ymax,
+                           ax=x, ay=y, xref="x", yref="y", axref="x", ayref="y",
+                           showarrow=True, arrowhead=3, arrowwidth=3, arrowcolor="royalblue")
     fig.update_layout(xaxis_title="Emisiones (x)", yaxis_title="Viento (y)",
                       height=600, legend=dict(orientation="h", y=-0.15))
     st.plotly_chart(fig, width="stretch")
+    st.caption("Flecha verde: dirección û que escribiste. Flecha azul: gradiente ∇C "
+               "(la dirección en la que C crece más rápido; siempre perpendicular a la curva de nivel).")
 
 with tab3d:
     fig3 = go.Figure(go.Surface(x=xs, y=ys, z=Z, colorscale="YlOrRd"))
@@ -260,8 +333,10 @@ with tabia:
         clave = st.text_input("Pega tu API key de Groq (gsk_...)", type="password")
 
 
-    contexto = ia.construir_contexto(ecuacion_input, x, y, c, gx, gy, nombre_dir, ux, uy, dd,
-                                     extra=analisis_extra)
+    contexto = ia.construir_contexto(
+        ecuacion_input, x, y, c, gx, gy,
+        f"vector escrito v = ({vx:g}, {vy:g})", ux, uy, dd,
+        extra=analisis_extra)
 
     if "chat" not in st.session_state:
         st.session_state.chat = []     # lista de (pregunta, respuesta) de esta sesión
